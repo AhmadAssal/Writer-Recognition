@@ -1,6 +1,6 @@
 import os
 """
-this script made by mad max
+this script made by mad max aka "SamyBahaa"
 """
 
 def read_forms_data():
