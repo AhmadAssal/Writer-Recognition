@@ -2,6 +2,7 @@ from datetime import datetime
 import random
 import os
 import shutil
+import glob,fnmatch
 """
 this script made by mad max aka "SamyBahaa"
 """
@@ -88,6 +89,10 @@ def generate_random_test_cases(num):
         test_images.append(dataset_path + "/" + choice + "/"+ random_images[2])
     # TODO 2: copy a random image as a test outside folders
     shutil.copy2(test_images[rand_index] , new_path)
+    os.chdir(new_path)
+    for file in glob.glob("*.png"):
+        os.rename(new_path + "/"+ file, "test.png")
+
     # TODO 3: write the random image original location in a text file for accuracy testing later 
     f = open(new_path + "truth.txt", "w")
     f.write(str(rand_index + 1))
@@ -96,5 +101,5 @@ def generate_random_test_cases(num):
     print("Truth is " + str(rand_index + 1))
 #order_data_set()
 #filter()
-for i in range(0,10):
+for i in range(0,100):
     generate_random_test_cases(i)
