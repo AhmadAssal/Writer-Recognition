@@ -67,30 +67,34 @@ def generate_random_test_cases(num):
     os.makedirs(new_path)
     suitable, dataset_path = filter()
     random.seed(datetime.now())
-    random_choices = random.choices(suitable, k=3)
-    rand_index = random.randrange(0,2)
+    random_choices = random.sample(suitable, 3)
+    
+    rand_index = random.randrange(0,3)
     test_images = []
     for i, choice in enumerate(random_choices):
         # TODO 0: Create a new folder
-        this_path = new_path + str(i)
+        this_path = new_path + str(i+1)
         os.makedirs(this_path)
         # TODO 1: copy images from original folder to new folder
         # TODO 1.1: get old folder 
         images = os.listdir(dataset_path + "/" + choice)
         # TODO 1.2: get three random images
-        random_images = random.choices(images, k = 3)
+        random_images = random.sample(images, 3)
+        
         # TODO:1.3: copy 2 of them into a folder
         for i in range(2):
             shutil.copy2(dataset_path + "/" + choice + "/" +  random_images[i] , this_path)
+            os.rename(this_path + "/" + random_images[i], this_path + "/" + str(i + 1) + ".png")
         test_images.append(dataset_path + "/" + choice + "/"+ random_images[2])
     # TODO 2: copy a random image as a test outside folders
     shutil.copy2(test_images[rand_index] , new_path)
     # TODO 3: write the random image original location in a text file for accuracy testing later 
     f = open(new_path + "truth.txt", "w")
-    f.write(str(rand_index))
+    f.write(str(rand_index + 1))
     f.close()
     print("Test case " + str(num) + " generated!")
-order_data_set()
-filter()
-generate_random_test_cases(0)
-generate_random_test_cases(1)
+    print("Truth is " + str(rand_index + 1))
+#order_data_set()
+#filter()
+for i in range(0,10):
+    generate_random_test_cases(i)
