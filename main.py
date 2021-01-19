@@ -312,7 +312,6 @@ def rearrange_image(binary_img,gray_img,show_steps=1,show_size=0.2):
         show(copy,show_size*2,"Vertical Merge")
     return copy
 
-
 def divide_image(image,show_steps=1,show_size=0.2):
     factor = 3
     height, width = image.shape
@@ -320,6 +319,15 @@ def divide_image(image,show_steps=1,show_size=0.2):
     w_3 =int(width/3)
     h_3= int(height/3)
 
+    if image.shape[0]<128:
+        image_new = np.zeros((256,image.shape[1]))
+        i = 0
+        while i+image.shape[0] < 255:
+            image_new[i:i+image.shape[0],:] = image
+            i += image.shape[0]
+        if i < 255:
+            image_new[i:,:] = image[0:image_new.shape[0]-i,:]
+        image = image_new
     for i in range(9):
         rand_row = int((random.random()*image.shape[0]) %(image.shape[0] - 128))
         ran_column = int((random.random()*image.shape[1]) %(image.shape[1] - 256))
@@ -330,7 +338,6 @@ def divide_image(image,show_steps=1,show_size=0.2):
         for img in img_arr:
             show(img,show_size*2,"Texture Block")
     return img_arr
-
 #--------------------------Feature  Extraction---------------------------------------
 
 def get_pixel(img, center, x, y): 
