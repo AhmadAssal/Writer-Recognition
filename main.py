@@ -581,7 +581,7 @@ def generate_random_test_cases(num):
 def main():
     #arg_path = sys.argv[]
     input_path = ""
-    if len(sys.argv) != 2:
+    if len(sys.argv) == 2:
         input_path = sys.argv[1] + "/testcases/"
     else:
         input_path = "testcases/"
