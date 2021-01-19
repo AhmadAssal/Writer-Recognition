@@ -599,13 +599,13 @@ def main():
     random.seed(1)
     cases = read_directory(input_path)
     # print("Cases is ", cases)
-    acc_list = []
+    #acc_list = []
     classifications = open("results.txt", "w")
     errors_log = open("error.log", "w")
     timing = open("time.txt", "w")
     for i, case in enumerate(cases):
         try :
-            print("Running Test Case", i)
+            print("Running Test Case ", i)
             total_time = 0
             case = str(case)
             clf,train_time = train(input_path,case,show_steps,show_size)
@@ -614,16 +614,17 @@ def main():
             total_time +=  test_time
             timing.write(str(round(total_time,2))+"\n")
             classifications.write(str(y)+"\n")
-            acc_list.append(calculate_accuracy(y, input_path, case,errors_log))
+            #acc_list.append(calculate_accuracy(y, input_path, case,errors_log))
         except Exception as e:
             print(e)
             y = int((int(random.random()*100) % 3) + 1)
             classifications.write(str(y)+"\n")
             errors_log.write("Exception at case : " + case + "\n")
-
-        
-    acc_list = np.array(acc_list)
-    print("Accuracy: ", (len(acc_list[acc_list == True])/ len(acc_list)) * 100, "%")
+    	classifications.flush()
+    	errors_log.flush()
+    	timing.flush()
+    #acc_list = np.array(acc_list)
+    #print("Accuracy: ", (len(acc_list[acc_list == True])/ len(acc_list)) * 100, "%")
     classifications.close()
     errors_log.close()
     timing.close()
