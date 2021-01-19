@@ -1,4 +1,4 @@
-from Writer-Recognition.classifications import *
+from code.classifications import *
 from Writer-Recognition.code.constants import *
 from Writer-Recognition.code.image_preprocessing import *
 from Writer-Recognition.code.utils import *
