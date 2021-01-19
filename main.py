@@ -589,9 +589,9 @@ def main():
     #arg_path = sys.argv[]
     input_path = ""
     if len(sys.argv) == 2:
-        input_path = sys.argv[1] + "/testcases/"
+        input_path = sys.argv[1] + "/data/"
     else:
-        input_path = "testcases/"
+        input_path = "data/"
     #input_path = sys.argv[0]
     #'F:/Tech/CUFE_CHS/Fall_2020/Pattern/Project/Data_Set/testcases/'
     show_steps = 0
