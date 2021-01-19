@@ -3,3 +3,14 @@
 ____________________________________________________________________
 
 ### This Project is trained on the IAM dataset 
+
+
+To run this project
+
+Either: 
+copy the main file into a directory that has a subdirectory called "testcases"
+then use the following command in the terminal "python3 main.py"
+
+OR:
+run it wherever but specify the parent directory of "testcases"
+using this command python3 main.py your_directory_path
