@@ -17,6 +17,7 @@ from datetime import datetime
 import shutil
 import time
 import glob,fnmatch
+from constants import *
 
 #----------------------Utilities------------------------------
 def show(img, factor=1,name="image"):
@@ -331,7 +332,6 @@ def divide_image(image,show_steps=1,show_size=0.2):
     for i in range(9):
         rand_row = int((random.random()*image.shape[0]) %(image.shape[0] - 128))
         ran_column = int((random.random()*image.shape[1]) %(image.shape[1] - 256))
-#         img_arr.append(image[rand_row:rand_row+128 , ran_column:ran_column+256])
         img_arr.append( image[int(image.shape[0]/2 - 64):int(image.shape[0]/2 + 64) , ran_column:ran_column+256])
 
     if show_steps == 1:
@@ -426,15 +426,19 @@ class LocalBinaryPatterns:
     def describe(self, image):
 
         lbp = get_LBP(image)
-        hestoImage,_ = histogram(lbp, nbins = self.nbins )
-        return hestoImage
+        H = np.zeros(self.nbins)
+        # Step (b) calculate histogram of the image
+        for  i in range (lbp.shape[0]):
+            for  j in range (lbp.shape[1]):
+                H[(lbp[i][j])] += 1
+        return H
 
 
 def read_directory(input_path):
     cases = []
     for file in os.listdir(input_path):
-        cases.append(int(file))
-    cases.sort()
+        cases.append(file)
+    cases =  sorted(cases)
     return cases
 
 #-------------------------------Training and Classification-------------------------------------
@@ -442,7 +446,7 @@ def read_directory(input_path):
 def classify(clf,input_path,case,show_steps=1,show_size=0.2):
     desc = LocalBinaryPatterns(256)
     data = []
-    gray_img = read_image(input_path+case+"/test.png")
+    gray_img = read_image(input_path+case+"/test"+type_image)
     start = time.time()
     #print(input_path+case+"/test.png")
     binary_img = preprocess_img(gray_img,show_steps,show_size)
@@ -463,8 +467,8 @@ def train(input_path,case,show_steps=1,show_size=0.2):
     total_time = 0
     for i in range(3):
         for  j in range(2):
-            print(input_path+case+"/"+str(i+1)+"/"+str(j+1)+".png")
-            gray_img = read_image(input_path+case+"/"+str(i+1)+"/"+str(j+1)+".png")
+            print(input_path+case+"/"+str(i+1)+"/"+str(j+1)+type_image)
+            gray_img = read_image(input_path+case+"/"+str(i+1)+"/"+str(j+1)+type_image)
             start = time.time()
             binary_img = preprocess_img(gray_img,show_steps,show_size)
             binary_img,gray_img = remove_top(binary_img,gray_img,show_steps,show_size)
@@ -503,8 +507,6 @@ def read_forms_data():
     this function read the forms.txt and extract the writer id and the form id that he wrote it.
     :return: dictionary of writers and the form that he has  written  key= form_id and value = writer_id
     """
-    "change the path of the forms.txt here :)"
-    path_forms_txt = 'F:/Tech/CUFE_CHS/Fall_2020/Pattern/Project/forms.txt'
     writers = {}
     reader = open(path_forms_txt)
     inputs = list(reader)
@@ -523,13 +525,10 @@ def order_data_set():
     this function call the read_forms_data() and collect all the forms written by the same author in one folder
     :return:
     """
-    "change the direction of old data set forms here :)"
-    old_path_data = 'F:/Tech/CUFE_CHS/Fall_2020/Pattern/Project/Data_Set/'
     writers_set = read_forms_data()
     for form in writers_set:
-        new_path_data = 'ordered forms/'
         new_path_data += str(writers_set[form])
-        form_name = str(form) + '.png'
+        form_name = str(form) + type_image
         if not os.path.exists(new_path_data):
             os.makedirs(new_path_data)
             os.rename(old_path_data + form_name,
@@ -542,19 +541,18 @@ def order_data_set():
 
 def filter():
     suitable = []
-    path = "F:/Tech/CUFE_CHS/Fall_2020/Pattern/Project/Data_Set/ordered forms"
-    for filename in os.listdir(path):
-        i = len(os.listdir(path + "/" + filename))
+    for filename in os.listdir(path_filter):
+        i = len(os.listdir(path_filter + "/" + filename))
         if (i >= 3):
             suitable.append(filename)
     suitable.sort()
     #print(suitable)
-    return suitable,path
+    return suitable,path_filter
 
 
 def generate_random_test_cases(num):
-    new_path="F:/Tech/CUFE_CHS/Fall_2020/Pattern/Project/Data_Set/testcases/" + str(num) + "/"
-    os.makedirs(new_path)
+    new_path_testcases=path_place_testcases + str(num) + "/"
+    os.makedirs(new_path_testcases)
     suitable, dataset_path = filter()
     random.seed(datetime.now())
     random_choices = random.sample(suitable, 3)
@@ -562,21 +560,21 @@ def generate_random_test_cases(num):
     rand_index = random.randrange(0,3)
     test_images = []
     for i, choice in enumerate(random_choices):
-        this_path = new_path + str(i+1)
+        this_path = new_path_testcases + str(i+1)
         os.makedirs(this_path)
         images = os.listdir(dataset_path + "/" + choice)
         random_images = random.sample(images, 3)
         
         for i in range(2):
             shutil.copy2(dataset_path + "/" + choice + "/" +  random_images[i] , this_path)
-            os.rename(this_path + "/" + random_images[i], this_path + "/" + str(i + 1) + ".png")
+            os.rename(this_path + "/" + random_images[i], this_path + "/" + str(i + 1) + type_image)
         test_images.append(dataset_path + "/" + choice + "/"+ random_images[2])
-    shutil.copy2(test_images[rand_index] , new_path)
-    os.chdir(new_path)
-    for file in glob.glob("*.png"):
-        os.rename(new_path + "/"+ file, "test.png")
+    shutil.copy2(test_images[rand_index] , new_path_testcases)
+    os.chdir(new_path_testcases)
+    for file in glob.glob("*"+type_image):
+        os.rename(new_path_testcases + "/"+ file, "test"+ type_image)
 
-    f = open(new_path + "truth.txt", "w")
+    f = open(new_path_testcases + "truth.txt", "w")
     f.write(str(rand_index + 1))
     f.close()
     print("Test case " + str(num) + " generated!")
@@ -586,20 +584,15 @@ def generate_random_test_cases(num):
 
 
 def main():
-    #arg_path = sys.argv[]
     input_path = ""
     if len(sys.argv) == 2:
         input_path = sys.argv[1] + "/data/"
     else:
         input_path = "data/"
-    #input_path = sys.argv[0]
-    #'F:/Tech/CUFE_CHS/Fall_2020/Pattern/Project/Data_Set/testcases/'
     show_steps = 0
     show_size = 0.2
     random.seed(1)
     cases = read_directory(input_path)
-    # print("Cases is ", cases)
-    #acc_list = []
     classifications = open("results.txt", "w")
     errors_log = open("error.log", "w")
     timing = open("time.txt", "w")
