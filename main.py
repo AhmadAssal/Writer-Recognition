@@ -18,6 +18,10 @@ import shutil
 import time
 import glob,fnmatch
 from constants import *
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings("ignore")
+import re
 
 #----------------------Utilities------------------------------
 def show(img, factor=1,name="image"):
@@ -217,11 +221,14 @@ def get_horizontal_merge(binary_sentence,gray_sentence,show_steps=1,show_size=0.
     area = 0 
     avg_height = 0
     for c in cnts:
+        x,y,w,h = cv2.boundingRect(c)
         area += cv2.contourArea(c)
+        avg_height += h
     area /= len(cnts)
+    avg_height /= len(cnts)
     for c in cnts:
         x,y,w,h = cv2.boundingRect(c)
-        if cv2.contourArea(c) > area/8 :
+        if cv2.contourArea(c) > area/8 and h > avg_height/2:
             boxes.append([x,y,w,h])
             order_list.append(x)
         else:
@@ -249,7 +256,8 @@ def get_horizontal_merge(binary_sentence,gray_sentence,show_steps=1,show_size=0.
         show(hori_merged,show_size*5,"Sentence After Horizontal Merge")
 
     return hori_merged,avg_height
-
+    
+    
 def get_sentences(binary_img,gray_img,show_steps=1,show_size=0.2):
     
     original_binary = binary_img.copy()
@@ -338,6 +346,7 @@ def divide_image(image,show_steps=1,show_size=0.2):
     for i in range(9):
         rand_row = int((random.random()*image.shape[0]) %(image.shape[0] - 128))
         ran_column = int((random.random()*image.shape[1]) %(image.shape[1] - 256))
+#         img_arr.append(image[rand_row:rand_row+128 , ran_column:ran_column+256])
         img_arr.append( image[int(image.shape[0]/2 - 64):int(image.shape[0]/2 + 64) , ran_column:ran_column+256])
 
     if show_steps == 1:
@@ -439,12 +448,19 @@ class LocalBinaryPatterns:
                 H[(lbp[i][j])] += 1
         return H
 
+def sort_nicely( l ):
+    """ Sort the given list in the way that humans expect.
+    """
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+    l.sort( key=alphanum_key )
+    return l
 
 def read_directory(input_path):
     cases = []
-    for file in os.listdir(input_path):
+    for file in  os.listdir(input_path):
         cases.append(file)
-    cases =  sorted(cases)
+    cases = sort_nicely(cases)
     return cases
 
 #-------------------------------Training and Classification-------------------------------------
@@ -452,7 +468,11 @@ def read_directory(input_path):
 def classify(clf,input_path,case,show_steps=1,show_size=0.2):
     desc = LocalBinaryPatterns(256)
     data = []
-    gray_img = read_image(input_path+case+"/test"+type_image)
+    for filename in os.listdir(input_path+case+"/"):
+        gray_img = read_image(input_path+case+"/"+filename)
+        if gray_img is not None:
+            break
+
     start = time.time()
     #print(input_path+case+"/test.png")
     binary_img = preprocess_img(gray_img,show_steps,show_size)
@@ -463,6 +483,9 @@ def classify(clf,input_path,case,show_steps=1,show_size=0.2):
         hist = desc.describe(block)
         data.append(hist)
     end = time.time()
+    scaler = StandardScaler()
+    scaler.fit(data)
+    scaler.transform(data)
     return np.bincount(np.around(clf.predict(data)).astype(int)).argmax(),end-start
 
 
@@ -472,9 +495,14 @@ def train(input_path,case,show_steps=1,show_size=0.2):
     labels = []
     total_time = 0
     for i in range(3):
+        images = []
+        for file in os.listdir(input_path+case+"/"+str(i+1)+"/"):
+            images.append(file)
+        images = sorted(images)
+        
         for  j in range(2):
-            print(input_path+case+"/"+str(i+1)+"/"+str(j+1)+type_image)
-            gray_img = read_image(input_path+case+"/"+str(i+1)+"/"+str(j+1)+type_image)
+            print(input_path+case+"/"+str(i+1)+"/"+images[j])
+            gray_img = read_image(input_path+case+"/"+str(i+1)+"/"+images[j])
             start = time.time()
             binary_img = preprocess_img(gray_img,show_steps,show_size)
             binary_img,gray_img = remove_top(binary_img,gray_img,show_steps,show_size)
@@ -488,12 +516,15 @@ def train(input_path,case,show_steps=1,show_size=0.2):
             total_time += end-start
     
     start = time.time()    
-    model =  LinearSVC(C=300, random_state=42,max_iter=2000000000)
+    scaler = StandardScaler()
+    scaler.fit(data)
+    scaler.transform(data)
+
+    model =  LinearSVC(C=100, random_state=42,max_iter=10000)
     model.fit(data, labels)
     end = time.time()
     total_time += end-start
     return model,total_time
-
 #------------------TestCases generators and accuracy calculation---------------------------
 
 def calculate_accuracy(classification, input_path, case, errors_log):
@@ -598,6 +629,7 @@ def main():
     show_steps = 0
     show_size = 0.2
     random.seed(1)
+    acc_list = []
     cases = read_directory(input_path)
     classifications = open("results.txt", "w")
     errors_log = open("error.log", "w")
@@ -613,14 +645,14 @@ def main():
             total_time +=  test_time
             timing.write(str(round(total_time,2))+"\n")
             classifications.write(str(y)+"\n")
-            #acc_list.append(calculate_accuracy(y, input_path, case,errors_log))
+            acc_list.append(calculate_accuracy(y, input_path, case,errors_log))
         except Exception as e:
             print(e)
-            y = int((int(random.random()*100) % 3) + 1)
+            y = 1
             classifications.write(str(y)+"\n")
             errors_log.write("Exception at case : " + case + "\n")
-    #acc_list = np.array(acc_list)
-    #print("Accuracy: ", (len(acc_list[acc_list == True])/ len(acc_list)) * 100, "%")
+    acc_list = np.array(acc_list)
+    print("Accuracy: ", (len(acc_list[acc_list == True])/ len(acc_list)) * 100, "%")
     classifications.close()
     errors_log.close()
     timing.close()
