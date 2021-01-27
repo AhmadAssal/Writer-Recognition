@@ -89,14 +89,20 @@ def preprocess_img(img,show_steps=1,show_size=0.2):
     return img
 
 def remove_top(binary_img,gray_img,show_steps=1,show_size=0.2):
-
+    l=0
+    i=2.0
     contours, hierarchy = cv2.findContours(binary_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     y_list = []
-    for contour in contours:
-        (x, y, w, h) = cv2.boundingRect(contour)
-        if w > binary_img.shape[1] / 2 and w < binary_img.shape[1] * 5 / 6:
-            y_list.append(y)
-    y_list = np.sort(y_list)
+    while(l<3):
+        l=0
+        y_list = []
+        for contour in contours:
+            (x, y, w, h) = cv2.boundingRect(contour)
+            if (binary_img.shape[1] / i) < w < (binary_img.shape[1] * 5 / 6):
+                l+=1
+                y_list.append(y)
+        y_list = np.sort(y_list)
+        i+=0.25
     y1=y_list[-2]
     y2=y_list[-1]
     if show_steps == 1:        
